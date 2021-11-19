@@ -50,7 +50,6 @@ class CategoryController extends Controller
             $image_path = $request->file('image')->store('categories', 'public');
             $category->image = $image_path;
         }
-        $category->created_by = Auth::user()->id;
         $category->save();
         return redirect('/categories')->with('message', 'New category successfully created');
     }
@@ -79,7 +78,6 @@ class CategoryController extends Controller
             $this->validate($request, $rules);
             $category->name = $request->name;
             $category->slug = \Str::slug($request->name, '-');
-            $category->updated_by = Auth::user()->id;
         }
         $category->update();
         return redirect('/categories/edit/' . $category->slug)->with('message', 'Category successfully updated');

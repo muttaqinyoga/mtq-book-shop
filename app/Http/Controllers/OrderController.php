@@ -53,16 +53,25 @@ class OrderController extends Controller
             })
             ->addColumn('action', function ($item) {
                 if ($item->status != 'FINISH') {
+                    if ($item->status == 'SUBMIT') {
+                        return '
+                        <a href="' . url('order/edit/' . $item->order_id) . '" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="' . url('order/detail/' . $item->order_id) . '" class="btn btn-info btn-sm"
+                        >
+                            Detail
+                            </a>
+                        <button type="button" id="btnDeleteOrder" delete_order_id="' . $item->order_id . '" invoice_number="' . $item->invoice_number . '" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteOrderModal">
+                            Cancel
+                            </button>
+                        ';
+                    }
                     return '
-                    <a href="' . url('order/edit/' . $item->order_id) . '" class="btn btn-sm btn-warning">Edit</a>
-                    <a href="' . url('order/detail/' . $item->order_id) . '" class="btn btn-info btn-sm"
-                    >
-                        Detail
-                        </a>
-                    <button type="button" id="btnDeleteOrder" order_id="' . $item->order_id . '" invoice_number="' . $item->invoice_number . '" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteOrderModal">
-                        Cancel
-                        </button>
-                    ';
+                        <a href="' . url('order/edit/' . $item->order_id) . '" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="' . url('order/detail/' . $item->order_id) . '" class="btn btn-info btn-sm"
+                        >
+                            Detail
+                            </a>
+                        ';
                 }
                 return '
                     <a href="' . url('order/detail/' . $item->order_id) . '" class="btn btn-info btn-sm"
@@ -211,101 +220,117 @@ class OrderController extends Controller
     }
     public function update(Request $request)
     {
-        $order = Order::where('id', '=', $request->order_id, 'and')->where('status', '!=', 'FINISH');
-        $book_order = BookOrder::where('order_id', '=', $order->id)->get();
-        $rules = [
-            'buyer' => 'required|string',
-            'address' => 'required|string',
-            'book' => 'required|exists:books,id',
-            'quantity' => 'required|numeric|min:0',
-            'status' => 'required|in:SUBMIT,PROCESS,FINISH',
-            '_nOrder' => 'required|numeric|min:1'
-        ];
-        $total = 0;
-        if ($request->_nOrder > 1) {
-            $flag_first_order = true;
-            for ($i = 1; $i <= $request->_nOrder; $i++) {
-                if ($flag_first_order) {
-                    $this->validate($request, $rules);
-                    // Reset Book Stock
-                    foreach ($book_order as $bo) {
-                        $book = Book::find($bo->book_id);
-                        $book->stock = $book->stock + (int) $bo->quantity;
-                        $book->save();
-                    }
-                    // Reset Book Ordered
-                    $book_order->each->delete();
-                    $order->customer_name = $request->buyer;
-                    $order->address = $request->address;
-                    $order->status = $request->status;
-                    $book = Book::find($request["book"]);
-                    if ($book->stock >= (int)$request["quantity"]) {
-                        $total += $book->price * (int)$request["quantity"];
-                        $book_order = new BookOrder;
-                        $book_order->book_id = $book->id;
-                        $book_order->order_id = $order->id;
-                        $book_order->quantity = (int)$request["quantity"];
-                        if ($book_order->save()) {
-                            $book->stock = $book->stock - (int)$request["quantity"];
-                            $book->save();
-                            $flag_first_order = false;
-                        }
-                    } else {
-                        return redirect(url('order/edit/' . $request->order_id))->with('failed', 'Book out of stock');
-                    }
-                }
-                if (isset($request["book$i"]) && isset($request["quantity$i"])) {
-                    $rules["book$i"] = 'required|exists:books,id';
-                    $rules["quantity$i"] = 'required|numeric|min:0';
-                    $this->validate($request, $rules);
-                    $book = Book::find($request["book$i"]);
-                    if ($book->stock >= (int)$request["quantity$i"]) {
-                        $total += $book->price * (int)$request["quantity$i"];
-                        $book_order = new BookOrder;
-                        $book_order->book_id = $book->id;
-                        $book_order->order_id = $order->id;
-                        $book_order->quantity = (int)$request["quantity$i"];
-                        if ($book_order->save()) {
-                            $book->stock = $book->stock - (int)$request["quantity$i"];
+        $order = Order::where('id', '=', $request->order_id, 'and')->where('status', '!=', 'FINISH')->firstOrFail();
+        if ($order->status != 'PROCESS') {
+            $book_order = BookOrder::where('order_id', '=', $order->id)->get();
+            $rules = [
+                'buyer' => 'required|string',
+                'address' => 'required|string',
+                'book' => 'required|exists:books,id',
+                'quantity' => 'required|numeric|min:0',
+                'status' => 'required|in:SUBMIT,PROCESS,FINISH',
+                '_nOrder' => 'required|numeric|min:1'
+            ];
+            $total = 0;
+            if ($request->_nOrder > 1) {
+                $flag_first_order = true;
+                for ($i = 1; $i <= $request->_nOrder; $i++) {
+                    if ($flag_first_order) {
+                        $this->validate($request, $rules);
+                        // Reset Book Stock
+                        foreach ($book_order as $bo) {
+                            $book = Book::find($bo->book_id);
+                            $book->stock = $book->stock + (int) $bo->quantity;
                             $book->save();
                         }
-                    } else {
-                        return redirect(url('order/create'))->with('failed', 'Book out of stock');
+                        // Reset Book Ordered
+                        $book_order->each->delete();
+                        $order->customer_name = $request->buyer;
+                        $order->address = $request->address;
+                        $order->status = $request->status;
+                        $book = Book::find($request["book"]);
+                        if ($book->stock >= (int)$request["quantity"]) {
+                            $total += $book->price * (int)$request["quantity"];
+                            $book_order = new BookOrder;
+                            $book_order->book_id = $book->id;
+                            $book_order->order_id = $order->id;
+                            $book_order->quantity = (int)$request["quantity"];
+                            if ($book_order->save()) {
+                                $book->stock = $book->stock - (int)$request["quantity"];
+                                $book->save();
+                                $flag_first_order = false;
+                            }
+                        } else {
+                            return redirect(url('order/edit/' . $request->order_id))->with('failed', 'Book out of stock');
+                        }
+                    }
+                    if (isset($request["book$i"]) && isset($request["quantity$i"])) {
+                        $rules["book$i"] = 'required|exists:books,id';
+                        $rules["quantity$i"] = 'required|numeric|min:0';
+                        $this->validate($request, $rules);
+                        $book = Book::find($request["book$i"]);
+                        if ($book->stock >= (int)$request["quantity$i"]) {
+                            $total += $book->price * (int)$request["quantity$i"];
+                            $book_order = new BookOrder;
+                            $book_order->book_id = $book->id;
+                            $book_order->order_id = $order->id;
+                            $book_order->quantity = (int)$request["quantity$i"];
+                            if ($book_order->save()) {
+                                $book->stock = $book->stock - (int)$request["quantity$i"];
+                                $book->save();
+                            }
+                        } else {
+                            return redirect(url('order/edit/' . $request->order_id))->with('failed', 'Book out of stock');
+                        }
                     }
                 }
-            }
-            $order->total_price = $total;
-            $order->save();
-        } else {
-            $this->validate($request, $rules);
-            // Reset Book Stock
-            foreach ($book_order as $bo) {
-                $book = Book::find($bo->book_id);
-                $book->stock = $book->stock + (int) $bo->quantity;
-                $book->save();
-            }
-            // Reset Book Ordered
-            $book_order->each->delete();
-            $order->customer_name = $request->buyer;
-            $order->address = $request->address;
-            $order->status = $request->status;
-            $book = Book::find($request["book"]);
-            if ($book->stock >= (int)$request["quantity"]) {
-                $total += $book->price * (int)$request["quantity"];
-                $book_order = new BookOrder;
-                $book_order->book_id = $book->id;
-                $book_order->order_id = $order->id;
-                $book_order->quantity = (int)$request["quantity"];
-                if ($book_order->save()) {
-                    $book->stock = $book->stock - (int)$request["quantity"];
+                $order->total_price = $total;
+                $order->save();
+            } else {
+                $this->validate($request, $rules);
+                // Reset Book Stock
+                foreach ($book_order as $bo) {
+                    $book = Book::find($bo->book_id);
+                    $book->stock = $book->stock + (int) $bo->quantity;
                     $book->save();
                 }
-            } else {
-                return redirect(url('order/create'))->with('failed', 'Book out of stock');
+                // Reset Book Ordered
+                $book_order->each->delete();
+                $order->customer_name = $request->buyer;
+                $order->address = $request->address;
+                $order->status = $request->status;
+                $book = Book::find($request["book"]);
+                if ($book->stock >= (int)$request["quantity"]) {
+                    $total += $book->price * (int)$request["quantity"];
+                    $book_order = new BookOrder;
+                    $book_order->book_id = $book->id;
+                    $book_order->order_id = $order->id;
+                    $book_order->quantity = (int)$request["quantity"];
+                    if ($book_order->save()) {
+                        $book->stock = $book->stock - (int)$request["quantity"];
+                        $book->save();
+                    }
+                } else {
+                    return redirect(url('order/create'))->with('failed', 'Book out of stock');
+                }
+                $order->total_price = $total;
+                $order->save();
             }
-            $order->total_price = $total;
-            $order->save();
+        } else {
+            $this->validate($request, ['status' => 'required|in:PROCESS,FINISH']);
+            if ($order->status == $request->status) {
+                $order->status = $request->status;
+                $order->update();
+            }
+            return redirect(url('orders'))->with('message', 'Order Successfully updated');
         }
+
         return redirect(url('orders'))->with('message', 'Order Successfully updated');
+    }
+
+    public function delete(Request $request)
+    {
+        $order = Order::where('id', '=', $request->delete_order_id, 'and')->where('status', '=', 'SUBMIT')->firstOrFail();
+        dd($order);
     }
 }

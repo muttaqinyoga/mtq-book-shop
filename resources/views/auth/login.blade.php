@@ -7,7 +7,7 @@
             <div class="login-content">
                 <div class="login-logo">
                     <a href="#">
-                        MUTTAQIN-SHOP
+                        MUTTAQIN BOOK SHOP
                     </a>
                 </div>
                 <div class="login-form">

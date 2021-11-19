@@ -188,16 +188,16 @@
                                         <small class="help-block form-text text-danger">{{ $errors->first('quantity') }}</small>
                                         @endif
                                     </div>
+                                    <input type="hidden" name="_nOrder" id="_nOrder" value="{{$order->count()}}">
                                     @if($o!=0 && $status=='SUBMIT')
                                     <div class="form-group item{{$o}}">
                                         <button item="{{$o}}" type="button" class="btn btn-sm btn-danger remove">remove</button>
                                     </div>
-                                    <input type="hidden" name="_nOrder" id="_nOrder" value="{{$order->count()}}">
-                                    <div class="form-group">
-                                        <button type="button" id="addNewItem" class="btn btn-sm btn-dark">add</button>
-                                    </div>
                                     @endif
                                     @endforeach
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" id="addNewItem" class="btn btn-sm btn-dark">add</button>
                                 </div>
                                 <div class="form-group">
                                     <label>Status</label>
@@ -215,6 +215,9 @@
                                                 <input type="radio" id="FINISH" name="status" value="FINISH" class="form-check-input" {{$status=='FINISH' ? 'checked' : ''}}>FINISH
                                             </label>
                                         </div>
+                                        @if ($errors->has('status'))
+                                        <small class="help-block form-text text-danger">{{ $errors->first('status') }}</small>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="form-group">

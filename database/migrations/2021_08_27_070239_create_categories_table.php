@@ -15,9 +15,9 @@ class CreateCategoriesTable extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->uuid('id')->default(DB::raw('(UUID())'))->primary();
-            $table->string("name");
+            $table->string("name")->unique();
             $table->string("slug")->unique();
-            $table->string("image")->comment("berisi nama file image saja tanpa path");
+            $table->string("image");
             $table->timestamps();
         });
     }

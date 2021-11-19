@@ -302,7 +302,7 @@
                     <div class="form-group row">
                         <label class="col-md-3 col-form-label">Description</label>
                         <div class="col-md-9">
-                            <input type="text" readonly class="form-control-plaintext"  value="${book_description}">
+                            <textarea rows="4" class="form-control" readonly>${book_description}</textarea>
                         </div>
                     </div>
                     <div class="form-group row">

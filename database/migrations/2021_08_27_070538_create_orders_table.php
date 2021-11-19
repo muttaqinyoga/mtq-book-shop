@@ -15,6 +15,7 @@ class CreateOrdersTable extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->uuid('id')->default(DB::raw('(UUID())'))->primary();
+            $table->uuid('user_id')->nullable()->default(null);
             $table->string('customer_name');
             $table->string('address');
             $table->float('total_price')->unsigned()->defaults(0);

@@ -238,8 +238,8 @@
         $(document).on('click', '#btnDeleteOrder', function() {
             const delete_order_id = $(this).attr('delete_order_id');
             const invoice_number = $(this).attr('invoice_number');
-            $('#delete_delete_order_id').attr('value', delete_order_id);
-            $('#deleteOrderModal #deleteOrderContent').html(`<p>Are you sure want to delete <strong>${invoice_number}</strong> from order list?</p>`);
+            $('#delete_order_id').attr('value', delete_order_id);
+            $('#deleteOrderModal #deleteOrderContent').html(`<p>Are you sure want to cancel <strong>${invoice_number}</strong> from order list?</p>`);
         });
 
     });

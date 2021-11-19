@@ -15,16 +15,14 @@ class CreateBooksTable extends Migration
     {
         Schema::create('books', function (Blueprint $table) {
             $table->uuid('id')->default(DB::raw('(UUID())'))->primary();
-            $table->string('title');
-            $table->string('slug');
-            $table->text('description')->nullable()->default(null);
+            $table->string('title')->unique();
+            $table->string('slug')->unique();
             $table->string('author');
             $table->string('publisher');
             $table->string('cover');
             $table->float('price');
-            $table->integer('views')->default(0)->unsigned();
             $table->integer('stock')->default(0)->unsigned();
-            $table->enum('status', ['PUBLISH', 'DRAFT']);
+            $table->text('description')->nullable()->default(null);
             $table->timestamps();
         });
     }
