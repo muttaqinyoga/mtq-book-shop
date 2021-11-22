@@ -320,10 +320,10 @@ class OrderController extends Controller
         } else {
             $this->validate($request, ['status' => 'required|in:PROCESS,FINISH']);
             if ($order->status == $request->status) {
-                $order->status = $request->status;
-                $order->update();
+                return redirect(url('orders'))->with('message', 'Order Successfully updated');
             }
-            return redirect(url('orders'))->with('message', 'Order Successfully updated');
+            $order->status = $request->status;
+            $order->update();
         }
 
         return redirect(url('orders'))->with('message', 'Order Successfully updated');
