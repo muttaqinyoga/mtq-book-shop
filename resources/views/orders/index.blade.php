@@ -182,7 +182,7 @@
                     @csrf
                     @method('DELETE')
                     <input type="hidden" name="delete_order_id" id="delete_order_id">
-                    <button type="submit" class="btn btn-danger">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="deleteOrderBtn">Cancel</button>
                 </form>
             </div>
         </div>
@@ -241,7 +241,10 @@
             $('#delete_order_id').attr('value', delete_order_id);
             $('#deleteOrderModal #deleteOrderContent').html(`<p>Are you sure want to cancel <strong>${invoice_number}</strong> from order list?</p>`);
         });
-
+        $('#deleteOrderForm').on('submit', function() {
+            $('form #deleteOrderBtn').attr('disabled', true);
+            $('form #deleteOrderBtn').text('Canceling...');
+        });
     });
 
     function formatRupiah(angka, prefix) {

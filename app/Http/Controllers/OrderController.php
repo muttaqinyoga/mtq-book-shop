@@ -52,7 +52,7 @@ class OrderController extends Controller
                 }
             })
             ->addColumn('action', function ($item) {
-                if ($item->status != 'FINISH') {
+                if ($item->status != 'FINISH' && $item->status != 'CANCEL') {
                     if ($item->status == 'SUBMIT') {
                         return '
                         <a href="' . url('order/edit/' . $item->order_id) . '" class="btn btn-sm btn-warning">Edit</a>
@@ -204,7 +204,8 @@ class OrderController extends Controller
             ->join('books', 'book_order.book_id', '=', 'books.id')
             ->select('orders.id as order_id', 'orders.customer_name', 'orders.address', 'orders.created_at as order_date', 'orders.invoice_number', 'orders.total_price', 'orders.status', 'books.title', 'books.price', 'book_order.quantity')
             ->where('orders.id', '=', $id, 'and')
-            ->where('orders.status', '!=', 'FINISH')
+            ->where('orders.status', '!=', 'FINISH', 'and')
+            ->where('orders.status', '!=', 'CANCEL')
             ->orderBy('orders.created_at')
             ->get();
 
@@ -220,7 +221,7 @@ class OrderController extends Controller
     }
     public function update(Request $request)
     {
-        $order = Order::where('id', '=', $request->order_id, 'and')->where('status', '!=', 'FINISH')->firstOrFail();
+        $order = Order::where('id', '=', $request->order_id, 'and')->where('status', '!=', 'FINISH', 'and')->where('orders.status', '!=', 'CANCEL')->firstOrFail();
         if ($order->status != 'PROCESS') {
             $book_order = BookOrder::where('order_id', '=', $order->id)->get();
             $rules = [
@@ -331,6 +332,17 @@ class OrderController extends Controller
     public function delete(Request $request)
     {
         $order = Order::where('id', '=', $request->delete_order_id, 'and')->where('status', '=', 'SUBMIT')->firstOrFail();
-        dd($order);
+        $book_order = BookOrder::where('order_id', '=', $order->id)->get();
+        // Reset Book Stock
+        foreach ($book_order as $bo) {
+            $book = Book::find($bo->book_id);
+            $book->stock = $book->stock + (int) $bo->quantity;
+            $book->save();
+        }
+        // Reset Book Ordered
+
+        $order->status = 'CANCEL';
+        $order->save();
+        return redirect(url('orders'))->with('message', 'Order Successfully canceled');
     }
 }
